@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Gastos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #2d3748; }
+
+    /* ── NAV ── */
+    nav {
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      color: white; padding: 0 12px;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+      min-height: 56px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    nav h1 { font-size: 1.1rem; font-weight: 700; margin-right: auto; padding: 14px 0; }
+    nav button {
+      background: none; border: none; color: rgba(255,255,255,.75);
+      padding: 0 12px; height: 56px; cursor: pointer; font-size: .82rem;
+      transition: color .2s, border-bottom .2s;
+      border-bottom: 3px solid transparent; white-space: nowrap;
+    }
+    nav button.active, nav button:hover { color: white; border-bottom: 3px solid white; }
+    @media(max-width:600px){
+      nav { padding: 0 8px; }
+      nav h1 { font-size: .95rem; width: 100%; padding: 10px 0 4px; }
+      nav button { font-size: .78rem; padding: 0 8px; height: 42px; }
+    }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1100px; margin: 20px auto; padding: 0 12px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── CARDS ── */
+    .card {
+      background: white; border-radius: 12px;
+      padding: 20px 16px; margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card h2 { font-size: 1rem; font-weight: 700; color: #1e40af; margin-bottom: 16px; }
+    .card h3 { font-size: .9rem; font-weight: 600; color: #374151; margin-bottom: 12px; }
+
+    /* ── GRID ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media(max-width:700px){
+      .grid-2,.grid-3,.grid-4 { grid-template-columns: 1fr 1fr; }
+    }
+    @media(max-width:420px){
+      .grid-2,.grid-3,.grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: 5px; }
+    input, select {
+      width: 100%; padding: 9px 12px; border: 1.5px solid #d1d5db;
+      border-radius: 8px; font-size: .9rem; outline: none;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus { border-color: #2563eb; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 20px; border-radius: 8px; border: none;
+      font-size: .88rem; font-weight: 600; cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { opacity: .9; }
+    .btn-sm { padding: 5px 12px; font-size: .8rem; }
+    .btn-icon { background: none; border: none; cursor: pointer; padding: 4px; color: #6b7280; }
+    .btn-icon:hover { color: #ef4444; }
+
+    /* ── TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th { background: #f8fafc; padding: 10px 12px; text-align: left;
+         font-weight: 700; color: #374151; border-bottom: 2px solid #e5e7eb; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    tr:hover td { background: #f8fafc; }
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: .75rem; font-weight: 700;
+    }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+
+    /* ── STAT CARDS ── */
+    .stat-card {
+      background: white; border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 4px solid;
+    }
+    .stat-card.blue { border-color: #2563eb; }
+    .stat-card.green { border-color: #10b981; }
+    .stat-card.red { border-color: #ef4444; }
+    .stat-card.orange { border-color: #f59e0b; }
+    .stat-label { font-size: .75rem; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .stat-value { font-size: 1.6rem; font-weight: 800; margin-top: 4px; }
+    .stat-sub { font-size: .78rem; color: #9ca3af; margin-top: 2px; }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap { background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; margin-top: 6px; }
+    .progress-bar { height: 100%; border-radius: 99px; transition: width .4s; }
+    .bar-green  { background: #10b981; }
+    .bar-yellow { background: #f59e0b; }
+    .bar-red    { background: #ef4444; }
+    .bar-gray   { background: #9ca3af; }
+    .bar-spent  { background: #f97316; }
+
+    /* ── ACCOUNT CHIPS ── */
+    .account-chip {
+      background: white; border-radius: 12px; padding: 14px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .account-chip .name { font-weight: 700; font-size: .9rem; }
+    .account-chip .amount { font-size: 1.15rem; font-weight: 800; }
+    .amount.positive { color: #10b981; }
+    .amount.negative { color: #ef4444; }
+
+    /* ── INLINE FORM ROW ── */
+    .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 140px; margin-bottom: 0; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .modal {
+      background:white;border-radius:14px;padding:28px;width:420px;max-width:95vw;
+      box-shadow:0 8px 32px rgba(0,0,0,.18);
+    }
+    .modal h3 { font-size:1rem;font-weight:800;color:#1e293b;margin-bottom:18px; }
+    .modal-actions { display:flex;gap:10px;justify-content:flex-end;margin-top:20px; }
+    .btn-secondary { background:#f1f5f9;color:#374151;border:none; }
+    .btn-secondary:hover { background:#e2e8f0; }
+
+    /* ── EMOJI PICKER ── */
+    .emoji-grid {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+    }
+    .emoji-btn {
+      font-size: 1.3rem; width: 36px; height: 36px; border-radius: 8px;
+      border: 2px solid transparent; background: #f1f5f9; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .15s, background .15s;
+    }
+    .emoji-btn:hover { background: #e0e7ff; }
+    .emoji-btn.selected { border-color: #2563eb; background: #dbeafe; }
+    .emoji-preview {
+      font-size: 1.6rem; width: 44px; height: 44px; border-radius: 10px;
+      border: 1.5px solid #d1d5db; background: #f8fafc;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: #1e293b; color: white; padding: 12px 20px;
+      border-radius: 10px; font-size: .88rem; font-weight: 600;
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 1.3rem; font-weight: 800; color: #1e293b;
+      margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .section-title span { font-size: 1.5rem; }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 40px; color: #9ca3af; font-size: .9rem; }
+
+    /* ── TABS ── */
+    .subtabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .subtab {
+      padding: 7px 14px; border-radius: 8px; border: 2px solid #e5e7eb;
+      background: white; cursor: pointer; font-size: .82rem; font-weight: 600;
+      color: #6b7280; transition: all .2s; white-space: nowrap;
+    }
+    .subtab.active { background: #2563eb; color: white; border-color: #2563eb; }
+
+    /* ── TABLE RESPONSIVE ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    @media(max-width:700px){
+      table { font-size: .8rem; }
+      td, th { padding: 8px 8px; }
+    }
+
+    /* ── SYNC STATUS ── */
+    .sync-bar {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+      padding: 10px 16px; font-size: .82rem; color: #1d4ed8;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h1>💰 Gestión de Gastos</h1>
+  <button id="nav-dashboard" class="active" onclick="showPage('dashboard')">📊 Resumen</button>
+  <button id="nav-budget-view" onclick="showPage('budget-view')">📅 Presupuesto</button>
+  <button id="nav-expenses" onclick="showPage('expenses')">📝 Registrar Gasto</button>
+  <button id="nav-admin" onclick="showPage('admin')">⚙️ Administración</button>
+</nav>
+
+<main>
+  <!-- ═══════════════ RESUMEN ═══════════════ -->
+  <div id="page-dashboard" class="page active">
+    <div class="section-title"><span>📊</span> Resumen General</div>
+
+    <!-- 4 KPIs globales -->
+    <div id="summary-stats" class="grid-4" style="margin-bottom:20px"></div>
+
+    <!-- Tabla principal: conceptos -->
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0">📅 Estado del Presupuesto Mensual</h2>
+        <span id="dash-month-label" style="font-size:.82rem;color:#6b7280;font-weight:600"></span>
+      </div>
+      <div class="table-wrap"><div id="concepts-table"></div></div>
+    </div>
+
+    <!-- Saldo cuentas + últimos gastos -->
+    <div class="grid-2">
+      <div class="card">
+        <h2>🏦 Saldo de Cuentas</h2>
+        <div id="accounts-overview"></div>
+      </div>
+      <div class="card">
+        <h2>🕐 Últimos Gastos</h2>
+        <div id="recent-expenses"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PRESUPUESTO ═══════════════ -->
+  <div id="page-budget-view" class="page">
+    <div class="section-title"><span>📅</span> Presupuesto Mensual</div>
+
+    <!-- Selector de mes + totales -->
+    <div class="card" style="padding:16px 24px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <label style="font-size:.8rem;font-weight:700;color:#374151;display:block;margin-bottom:4px">Mes</label>
+          <input type="month" id="bv-month" onchange="renderBudgetView()" style="padding:7px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem" />
+        </div>
+        <div id="bv-totals" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- Tabla resumen de todos los conceptos -->
+    <div class="card" style="margin-bottom:20px">
+      <h2>📋 Resumen por Concepto</h2>
+      <div class="table-wrap"><div id="bv-summary-table"></div></div>
+    </div>
+
+    <!-- Tarjetas detalle por concepto -->
+    <div id="bv-concept-cards"></div>
+  </div>
+
+  <!-- ═══════════════ REGISTRAR GASTO ═══════════════ -->
+  <div id="page-expenses" class="page">
+    <div class="section-title"><span>📝</span> Registrar Gasto</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2>Nuevo Gasto</h2>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="exp-date" />
+        </div>
+        <div class="form-group">
+          <label>Concepto (categoría)</label>
+          <select id="exp-concept"></select>
+        </div>
+        <div class="form-group">
+          <label>Cuenta</label>
+          <select id="exp-account"></select>
+        </div>
+        <div class="form-group">
+          <label>Importe (€)</label>
+          <input type="number" id="exp-amount" placeholder="0.00" step="0.01" min="0" />
+        </div>
+        <div class="form-group">
+          <label id="exp-desc-label">Descripción <span id="exp-desc-req" style="color:#ef4444;display:none">*obligatorio</span><span id="exp-desc-opt" style="color:#9ca3af"> (opcional)</span></label>
+          <input type="text" id="exp-desc" placeholder="Ej: Mercadona" />
+          <div id="exp-desc-hint" style="font-size:.75rem;color:#6b7280;margin-top:3px;display:none">
+            💬 Para esta categoría es obligatorio especificar qué gasto es.
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addExpense()">➕ Añadir Gasto</button>
+      </div>
+
+      <div class="card">
+        <h2>📊 Estado del Concepto Seleccionado</h2>
+        <div id="concept-status"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Historial de Gastos</h2>
+      <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label>Filtrar por concepto</label>
+          <select id="filter-concept" onchange="renderExpenseTable()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label>Filtrar por cuenta</label>
+          <select id="filter-account" onchange="renderExpenseTable()">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:120px;margin:0">
+          <label>Mes</label>
+          <input type="month" id="filter-month" onchange="renderExpenseTable()" />
+        </div>
+      </div>
+      <div class="table-wrap"><div id="expense-table"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ADMINISTRACIÓN ═══════════════ -->
+  <div id="page-admin" class="page">
+    <div class="section-title"><span>⚙️</span> Administración</div>
+
+    <div class="subtabs">
+      <div class="subtab active" onclick="showSubtab('accounts')">🏦 Cuentas</div>
+      <div class="subtab" onclick="showSubtab('budget')">📅 Gastos estimados</div>
+      <div class="subtab" onclick="showSubtab('income-admin')">💰 Ingresos estimados</div>
+      <div class="subtab" onclick="showSubtab('drive')">☁️ Google Drive</div>
+      <div class="subtab" onclick="showSubtab('data')">💾 Datos</div>
+    </div>
+
+    <!-- CUENTAS -->
+    <div id="subtab-accounts">
+      <div class="card">
+        <h2>🏦 Cuentas Bancarias</h2>
+        <p style="font-size:.82rem;color:#6b7280;margin-bottom:16px">
+          Añade tus cuentas bancarias y su saldo actual. El saldo se actualizará automáticamente al registrar gastos.
+        </p>
+        <div class="form-row" style="margin-bottom:16px">
+          <div class="form-group">
+            <label>Nombre del banco</label>
+            <input type="text" id="acc-name" placeholder="Ej: CaixaBank" />
+          </div>
+          <div class="form-group">
+            <label>Saldo actual (€)</label>
+            <input type="number" id="acc-balance" placeholder="0.00" step="0.01" />
+          </div>
+          <div style="padding-bottom:2px">
+            <button class="btn btn-primary" onclick="addAccount()">➕ Añadir</button>
+          </div>
+        </div>
+        <div class="table-wrap"><div id="accounts-table"></div></div>
+      </div>
+
+      <div class="card">
+        <h2>🔄 Traspaso entre Cuentas</h2>
+        <p style="font-size:.82rem;color:#6b7280;margin-bottom:16px">
+          Mueve dinero de una cuenta a otra. Los saldos se actualizarán automáticamente.
+        </p>
+        <div class="form-row" style="margin-bottom:16px">
+          <div class="form-group">
+            <label>Cuenta origen</label>
+            <select id="transfer-from"></select>
+          </div>
+          <div class="form-group">
+            <label>Cuenta destino</label>
+            <select id="transfer-to"></select>
+          </div>
+          <div class="form-group">
+            <label>Importe (€)</label>
+            <input type="number" id="transfer-amount" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" id="transfer-date" />
+          </div>
+          <div class="form-group">
+            <label>Descripción (opcional)</label>
+            <input type="text" id="transfer-desc" placeholder="Ej: Transferencia mensual" />
+          </div>
+          <div style="padding-top:22px">
+            <button class="btn btn-primary" onclick="doTransfer()">🔄 Traspasar</button>
+          </div>
+        </div>
+
+        <div id="transfer-history"></div>
+      </div>
+    </div>
+
+    <!-- PRESUPUESTO -->
+    <div id="subtab-budget" style="display:none">
+      <div class="card">
+        <h2>📅 Gastos Fijos Mensuales</h2>
+        <p style="font-size:.82rem;color:#6b7280;margin-bottom:10px">
+          Define las categorías de gasto y su previsión mensual.
+        </p>
+        <div style="margin-bottom:16px">
+          <button class="btn btn-primary btn-sm" onclick="loadDefaultCategories()">🔄 Cargar categorías predefinidas</button>
+          <span style="font-size:.75rem;color:#9ca3af;margin-left:8px">Carga las 19 categorías con sus emojis (no borra las existentes)</span>
+        </div>
+        <div class="form-row" style="margin-bottom:10px;align-items:flex-start">
+          <div class="form-group" style="flex:0 0 auto">
+            <label>Símbolo</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="emoji-preview" id="bud-icon-preview">❓</div>
+              <input type="text" id="bud-icon" placeholder="✏️"
+                style="width:60px;text-align:center;font-size:1.2rem"
+                maxlength="2"
+                oninput="document.getElementById('bud-icon-preview').textContent=this.value||'❓'; document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.toggle('selected',b.dataset.emoji===this.value))" />
+            </div>
+          </div>
+          <div class="form-group" style="flex:2">
+            <label>Concepto</label>
+            <input type="text" id="bud-name" placeholder="Ej: Comida" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Previsión mensual (€)</label>
+            <input type="number" id="bud-amount" placeholder="0.00" step="0.01" />
+          </div>
+          <div style="padding-top:22px">
+            <button class="btn btn-primary" onclick="addBudget()">➕ Añadir</button>
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:.8rem;font-weight:600;color:#374151">Emojis rápidos</label>
+          <div class="emoji-grid" id="emoji-quick-grid"></div>
+        </div>
+        <div class="table-wrap"><div id="budget-table"></div></div>
+      </div>
+    </div>
+
+    <!-- INGRESOS ESTIMADOS -->
+    <div id="subtab-income-admin" style="display:none">
+      <div class="card">
+        <h2>💰 Ingresos Estimados Mensuales</h2>
+        <p style="font-size:.82rem;color:#6b7280;margin-bottom:16px">
+          Define las fuentes de ingresos y su importe mensual estimado. Puedes personalizar el importe para un mes concreto.
+        </p>
+        <div class="form-row" style="margin-bottom:16px;align-items:flex-start">
+          <div class="form-group" style="flex:0 0 auto">
+            <label>Símbolo</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="emoji-preview" id="inc-icon-preview">❓</div>
+              <input type="text" id="inc-icon" placeholder="💰"
+                style="width:60px;text-align:center;font-size:1.2rem"
+                maxlength="2"
+                oninput="document.getElementById('inc-icon-preview').textContent=this.value||'❓'" />
+            </div>
+          </div>
+          <div class="form-group" style="flex:2">
+            <label>Nombre del ingreso</label>
+            <input type="text" id="inc-name" placeholder="Ej: Nómina" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Importe mensual (€)</label>
+            <input type="number" id="inc-amount" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div style="padding-top:22px">
+            <button class="btn btn-primary" onclick="addIncomeCategory()">➕ Añadir</button>
+          </div>
+        </div>
+        <div class="table-wrap"><div id="income-cat-table"></div></div>
+      </div>
+    </div>
+
+    <!-- GOOGLE DRIVE -->
+    <div id="subtab-drive" style="display:none">
+      <div class="card">
+        <h2>☁️ Sincronización con Google Drive</h2>
+        <div id="drive-status-bar" style="margin-bottom:16px"></div>
+
+        <div class="form-group">
+          <label>URL del script de Google Apps Script</label>
+          <input type="text" id="drive-url" placeholder="https://script.google.com/macros/s/.../exec"
+            style="font-size:.8rem" />
+          <div style="font-size:.75rem;color:#6b7280;margin-top:4px">
+            Pega aquí la URL que obtienes al implementar el script <strong>Code.gs</strong> en Google Sheets.
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+          <button class="btn btn-primary" onclick="saveDriveUrl()">💾 Guardar URL</button>
+          <button class="btn btn-primary" onclick="testDriveConnection()">🔌 Probar conexión</button>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin-bottom:20px" />
+
+        <h3 style="margin-bottom:12px">Sincronización manual</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="pushToSheets()">⬆️ Enviar datos a Sheets</button>
+          <button class="btn btn-primary" onclick="pullFromSheets()">⬇️ Cargar datos desde Sheets</button>
+        </div>
+        <div style="font-size:.75rem;color:#9ca3af;margin-top:10px">
+          Los datos también se sincronizan automáticamente cada vez que añades o eliminas un gasto.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📋 Instrucciones paso a paso</h2>
+        <ol style="font-size:.88rem;line-height:1.9;color:#374151;padding-left:20px">
+          <li>Ve a <strong>sheets.google.com</strong> y crea una hoja nueva en blanco.</li>
+          <li>En el menú: <strong>Extensiones → Apps Script</strong>.</li>
+          <li>Borra el código existente y pega el contenido del archivo <strong>Code.gs</strong>.</li>
+          <li>Guarda con <strong>Ctrl+S</strong>.</li>
+          <li>Haz clic en <strong>Implementar → Nueva implementación</strong>.</li>
+          <li>Tipo: <strong>Aplicación web</strong>.<br>
+              &nbsp;&nbsp;• Ejecutar como: <em>Yo (tu cuenta)</em><br>
+              &nbsp;&nbsp;• Quién tiene acceso: <em>Cualquier persona</em></li>
+          <li>Haz clic en <strong>Implementar</strong> → acepta los permisos → copia la URL.</li>
+          <li>Pega la URL en el campo de arriba y haz clic en <strong>Guardar URL</strong>.</li>
+          <li>Haz clic en <strong>Enviar datos a Sheets</strong> para la primera sincronización.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- DATOS -->
+    <div id="subtab-data" style="display:none">
+      <div class="card">
+        <h2>💾 Gestión de Datos</h2>
+        <p style="font-size:.82rem;color:#6b7280;margin-bottom:20px">
+          Exporta tus datos para guardarlos en Google Drive o Excel, o importa un backup anterior.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+          <button class="btn btn-primary" onclick="exportJSON()">📤 Exportar datos (JSON)</button>
+          <button class="btn btn-primary" onclick="exportCSV()">📊 Exportar gastos (CSV)</button>
+          <label class="btn btn-primary" style="cursor:pointer">
+            📥 Importar datos (JSON)
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(this)" />
+          </label>
+        </div>
+        <div class="sync-bar">
+          ℹ️ Para sincronizar con Google Sheets, usa el script <strong>Code.gs</strong> incluido en la carpeta de descarga.
+          Los datos exportados en JSON pueden importarse en cualquier momento.
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ Borrar todos los datos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════ MODAL EDITAR ICONO ═══════════ -->
+<div id="modal-icon" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeIconModal()">
+  <div class="modal" style="width:480px">
+    <h3 id="modal-icon-title">🎨 Cambiar icono</h3>
+    <input type="hidden" id="modal-icon-id" />
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div class="emoji-preview" id="modal-icon-preview" style="font-size:2rem;width:56px;height:56px">❓</div>
+      <div style="flex:1">
+        <label style="font-size:.8rem;font-weight:600;color:#374151;display:block;margin-bottom:5px">Escribe o pega un emoji</label>
+        <input type="text" id="modal-icon-input" maxlength="2" placeholder="🎯"
+          style="width:80px;text-align:center;font-size:1.4rem;padding:8px;border:1.5px solid #d1d5db;border-radius:8px"
+          oninput="document.getElementById('modal-icon-preview').textContent=this.value||'❓';
+                   document.querySelectorAll('.modal-emoji-btn').forEach(b=>b.classList.toggle('selected',b.dataset.emoji===this.value))" />
+      </div>
+    </div>
+
+    <label style="font-size:.8rem;font-weight:600;color:#374151">Selección rápida</label>
+    <div class="emoji-grid" id="modal-emoji-grid" style="margin-top:6px;margin-bottom:4px"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeIconModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIconEdit()">💾 Guardar icono</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL EDITAR PRESUPUESTO ═══════════ -->
+<div id="modal-budget" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeBudgetModal()">
+  <div class="modal">
+    <h3 id="modal-budget-title">✏️ Modificar estimación</h3>
+    <input type="hidden" id="modal-budget-id" />
+
+    <div class="form-group">
+      <label>Nuevo importe (€)</label>
+      <input type="number" id="modal-budget-amount" placeholder="0.00" step="0.01" min="0" />
+    </div>
+
+    <div class="form-group">
+      <label>¿A qué meses afecta?</label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer">
+          <input type="radio" name="modal-scope" value="month" checked />
+          <span>Solo para el mes:
+            <input type="month" id="modal-budget-month" style="margin-left:6px;padding:4px 8px;border:1.5px solid #d1d5db;border-radius:6px" />
+          </span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer">
+          <input type="radio" name="modal-scope" value="future" />
+          <span>Este mes y todos los siguientes (nuevo valor por defecto)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeBudgetModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveBudgetEdit()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL EDITAR INGRESO ESTIMADO ═══════════ -->
+<div id="modal-income" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeIncomeModal()">
+  <div class="modal">
+    <h3 id="modal-income-title">✏️ Modificar ingreso estimado</h3>
+    <input type="hidden" id="modal-income-id" />
+
+    <div class="form-group">
+      <label>Nuevo importe (€)</label>
+      <input type="number" id="modal-income-amount" placeholder="0.00" step="0.01" min="0" />
+    </div>
+
+    <div class="form-group">
+      <label>¿A qué meses afecta?</label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer">
+          <input type="radio" name="modal-income-scope" value="month" checked />
+          <span>Solo para el mes:
+            <input type="month" id="modal-income-month" style="margin-left:6px;padding:4px 8px;border:1.5px solid #d1d5db;border-radius:6px" />
+          </span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-weight:400;cursor:pointer">
+          <input type="radio" name="modal-income-scope" value="future" />
+          <span>Este mes y todos los siguientes (nuevo valor por defecto)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeIncomeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIncomeEdit()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✅ Guardado</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATA MODEL  (localStorage)
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'gastos_app_v1';
+
+// Convierte cualquier formato de fecha a YYYY-MM-DD
+function normalizeDate(val) {
+  if (!val) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return String(val); // ya correcto
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return String(val);
+}
+
+// Normaliza las fechas de todos los gastos y traspasos del objeto DB
+function normalizeDatesInDB(data) {
+  if (data.expenses)  data.expenses.forEach(e => { e.date = normalizeDate(e.date); });
+  if (data.transfers) data.transfers.forEach(t => { t.date = normalizeDate(t.date); });
+  return data;
+}
+
+function load() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData();
+    return normalizeDatesInDB(data);
+  }
+  catch(e) { return defaultData(); }
+}
+function save(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+const DEFAULT_CATEGORIES = [
+  { icon:'🛒', name:'Supermercado' },
+  { icon:'👩‍⚕️', name:'Cuidadora' },
+  { icon:'🗓️', name:'Cuidadora fin de semana' },
+  { icon:'⛽', name:'Gasolina' },
+  { icon:'🥩', name:'Carnicería' },
+  { icon:'🍞', name:'Panadería' },
+  { icon:'🐟', name:'Pescadería' },
+  { icon:'👦', name:'Paga Diego' },
+  { icon:'🧒', name:'Paga Vice' },
+  { icon:'🏠', name:'Alquiler piso' },
+  { icon:'⚽', name:'Apuestas deportivas' },
+  { icon:'💡', name:'Luz' },
+  { icon:'🌐', name:'Internet' },
+  { icon:'💧', name:'Agua' },
+  { icon:'☎️', name:'Teléfono fijo' },
+  { icon:'📦', name:'Varios' },
+  { icon:'☕', name:'Bar trabajo' },
+  { icon:'🎯', name:'Hobbies' },
+  { icon:'🛍️', name:'Compras' },
+];
+
+// Categorías que requieren descripción obligatoria
+const REQUIRES_DESC = ['Varios', 'Hobbies', 'Compras', 'Bar trabajo'];
+
+function defaultData() {
+  const budgets = DEFAULT_CATEGORIES.map((c, i) => ({
+    id: 1000 + i,
+    name: c.name,
+    icon: c.icon,
+    amount: 0          // importe por defecto (todos los meses)
+  }));
+  const incomeCategories = [
+    { id: 2001, name: 'Nómina',           icon: '💼', amount: 0 },
+    { id: 2002, name: 'Ley dependencia',  icon: '🏛️', amount: 0 },
+    { id: 2003, name: 'Pensión madre',    icon: '👵', amount: 0 },
+  ];
+  return { accounts: [], budgets, expenses: [],
+           budgetOverrides: [],    // [{budgetId, month:'YYYY-MM', amount}]
+           transfers: [],          // [{id, date, fromId, fromName, toId, toName, amount, desc}]
+           incomeCategories,       // [{id, name, icon, amount}]
+           incomeOverrides: [],    // [{incomeCatId, month, amount}]
+           incomeEntries: [] };    // [{id, date, categoryId, categoryName, accountId, accountName, amount, desc}]
+}
+
+function getIncomeAmount(catId, ym) {
+  if (!DB.incomeOverrides) DB.incomeOverrides = [];
+  const ov = DB.incomeOverrides.find(o => String(o.incomeCatId) === String(catId) && o.month === ym);
+  if (ov) return ov.amount;
+  const c = DB.incomeCategories && DB.incomeCategories.find(c => String(c.id) === String(catId));
+  return c ? c.amount : 0;
+}
+
+// Devuelve el importe de una categoría para un mes concreto:
+// si hay un override específico para ese mes, lo usa;
+// si no, usa el importe por defecto de la categoría.
+function getBudgetAmount(budgetId, ym) {
+  if (!DB.budgetOverrides) DB.budgetOverrides = [];
+  const override = DB.budgetOverrides.find(
+    o => String(o.budgetId) === String(budgetId) && o.month === ym
+  );
+  if (override) return override.amount;
+  const b = DB.budgets.find(b => String(b.id) === String(budgetId));
+  return b ? b.amount : 0;
+}
+
+let DB = load();
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'budget-view') initBudgetView();
+  if (page === 'expenses') initExpensePage();
+  if (page === 'admin') { renderAdmin(); renderDriveStatus(); }
+}
+
+function showSubtab(tab) {
+  document.querySelectorAll('[id^="subtab-"]').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.subtab').forEach(el => el.classList.remove('active'));
+  document.getElementById('subtab-' + tab).style.display = 'block';
+  event.target.classList.add('active');
+  renderAdmin();
+}
+
+// ═══════════════════════════════════════════
+//  ACCOUNTS
+// ═══════════════════════════════════════════
+function addAccount() {
+  const name = document.getElementById('acc-name').value.trim();
+  const balance = parseFloat(document.getElementById('acc-balance').value);
+  if (!name) return toast('⚠️ Introduce el nombre del banco');
+  if (isNaN(balance)) return toast('⚠️ Introduce el saldo');
+  DB.accounts.push({ id: Date.now(), name, balance, initialBalance: balance });
+  save(DB);
+  document.getElementById('acc-name').value = '';
+  document.getElementById('acc-balance').value = '';
+  renderAdmin();
+  toast('✅ Cuenta añadida');
+}
+
+function deleteAccount(id) {
+  if (!confirm('¿Eliminar esta cuenta?')) return;
+  DB.accounts = DB.accounts.filter(a => String(a.id) !== String(id));
+  save(DB);
+  renderAdmin();
+  toast('🗑️ Cuenta eliminada');
+}
+
+function updateAccountBalance(id, val) {
+  const acc = DB.accounts.find(a => String(a.id) === String(id));
+  if (acc) { acc.balance = parseFloat(val) || 0; save(DB); }
+}
+
+function doTransfer() {
+  const fromId = document.getElementById('transfer-from').value;
+  const toId   = document.getElementById('transfer-to').value;
+  const amount = parseFloat(document.getElementById('transfer-amount').value);
+  const date   = document.getElementById('transfer-date').value;
+  const desc   = document.getElementById('transfer-desc').value.trim();
+
+  if (!fromId) return toast('⚠️ Selecciona la cuenta origen');
+  if (!toId)   return toast('⚠️ Selecciona la cuenta destino');
+  if (fromId === toId) return toast('⚠️ Las cuentas deben ser distintas');
+  if (isNaN(amount) || amount <= 0) return toast('⚠️ Introduce un importe válido');
+  if (!date) return toast('⚠️ Selecciona la fecha');
+
+  const from = DB.accounts.find(a => String(a.id) === String(fromId));
+  const to   = DB.accounts.find(a => String(a.id) === String(toId));
+  if (!from || !to) return toast('⚠️ Cuentas no encontradas');
+
+  if (from.balance < amount) {
+    if (!confirm(`⚠️ La cuenta "${from.name}" solo tiene ${fmt(from.balance)}. ¿Continuar igualmente?`)) return;
+  }
+
+  from.balance -= amount;
+  to.balance   += amount;
+
+  if (!DB.transfers) DB.transfers = [];
+  DB.transfers.push({
+    id: Date.now(), date, fromId, fromName: from.name,
+    toId, toName: to.name, amount,
+    desc: desc || `Traspaso ${from.name} → ${to.name}`
+  });
+
+  save(DB);
+  document.getElementById('transfer-amount').value = '';
+  document.getElementById('transfer-desc').value   = '';
+  renderAdmin();
+  toast(`✅ Traspaso de ${fmt(amount)} realizado`);
+}
+
+function deleteTransfer(id) {
+  if (!confirm('¿Deshacer este traspaso? Los saldos se restaurarán.')) return;
+  const t = DB.transfers.find(t => String(t.id) === String(id));
+  if (!t) return;
+  const from = DB.accounts.find(a => String(a.id) === String(t.fromId));
+  const to   = DB.accounts.find(a => String(a.id) === String(t.toId));
+  if (from) from.balance += t.amount;
+  if (to)   to.balance   -= t.amount;
+  DB.transfers = DB.transfers.filter(t => String(t.id) !== String(id));
+  save(DB);
+  renderAdmin();
+  toast('↩️ Traspaso deshecho');
+}
+
+function renderTransferSection() {
+  // Rellenar selects
+  const opts = '<option value="">-- Selecciona --</option>' +
+    DB.accounts.map(a => `<option value="${a.id}">${a.name} (${fmt(a.balance)})</option>`).join('');
+  const selFrom = document.getElementById('transfer-from');
+  const selTo   = document.getElementById('transfer-to');
+  if (selFrom) selFrom.innerHTML = opts;
+  if (selTo)   selTo.innerHTML   = opts;
+
+  // Fecha de hoy por defecto
+  const dateInput = document.getElementById('transfer-date');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+
+  // Historial de traspasos
+  const hist = document.getElementById('transfer-history');
+  if (!hist) return;
+  if (!DB.transfers || DB.transfers.length === 0) {
+    hist.innerHTML = '<div class="empty" style="margin-top:12px">No hay traspasos registrados.</div>';
+    return;
+  }
+  const sorted = [...DB.transfers].sort((a,b) => b.date.localeCompare(a.date));
+  hist.innerHTML = `
+    <h3 style="margin-top:16px;margin-bottom:10px">Historial de traspasos</h3>
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Origen</th><th>Destino</th><th>Descripción</th><th style="text-align:right">Importe</th><th></th></tr>
+      </thead>
+      <tbody>
+        ${sorted.map(t => `
+          <tr>
+            <td>${fmtDate(t.date)}</td>
+            <td style="color:#ef4444;font-weight:600">📤 ${t.fromName}</td>
+            <td style="color:#10b981;font-weight:600">📥 ${t.toName}</td>
+            <td style="color:#6b7280;font-size:.85rem">${t.desc||'-'}</td>
+            <td style="text-align:right;font-weight:700">${fmt(t.amount)}</td>
+            <td><button class="btn-icon" onclick="deleteTransfer(${t.id})" title="Deshacer">↩️</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ═══════════════════════════════════════════
+//  BUDGETS
+// ═══════════════════════════════════════════
+function addBudget() {
+  const name = document.getElementById('bud-name').value.trim();
+  const amount = parseFloat(document.getElementById('bud-amount').value);
+  const icon = document.getElementById('bud-icon').value.trim() || '📌';
+  if (!name) return toast('⚠️ Introduce el concepto');
+  if (isNaN(amount) || amount <= 0) return toast('⚠️ Introduce la previsión');
+  DB.budgets.push({ id: Date.now(), name, amount, icon });
+  save(DB);
+  document.getElementById('bud-name').value = '';
+  document.getElementById('bud-amount').value = '';
+  document.getElementById('bud-icon').value = '';
+  document.getElementById('bud-icon-preview').textContent = '❓';
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  renderAdmin();
+  toast('✅ Concepto añadido');
+}
+
+// ── Modal editar icono ────────────────────────────────────────────
+function openIconModal(budgetId) {
+  const b = DB.budgets.find(x => String(x.id) === String(budgetId));
+  if (!b) return;
+  document.getElementById('modal-icon-id').value = budgetId;
+  document.getElementById('modal-icon-title').textContent = `🎨 Icono — ${b.name}`;
+  document.getElementById('modal-icon-input').value = b.icon || '';
+  document.getElementById('modal-icon-preview').textContent = b.icon || '❓';
+
+  // Generar grid de emojis si está vacío
+  const grid = document.getElementById('modal-emoji-grid');
+  if (grid && !grid.children.length) {
+    const EMOJIS = ['🛒','🍽️','🍴','🍺','🍻','🥂','🏠','💡','⛽','🏥',
+                    '💊','🎓','👗','💄','🐾','🎭','✈️','💪','📱','🔧',
+                    '💰','🎁','👶','🧹','💼','🌿','🍞','🥩','🐟','☕',
+                    '🎯','🛍️','📦','☎️','💧','🌐','⚽','👦','🧒','🗓️',
+                    '👩‍⚕️','🧑‍⚕️','🏦','🚌','🎪'];
+    grid.innerHTML = EMOJIS.map(e =>
+      `<button class="emoji-btn modal-emoji-btn" data-emoji="${e}" title="${e}"
+        onclick="document.getElementById('modal-icon-input').value='${e}';
+                 document.getElementById('modal-icon-preview').textContent='${e}';
+                 document.querySelectorAll('.modal-emoji-btn').forEach(b=>b.classList.toggle('selected',b.dataset.emoji==='${e}'))">${e}</button>`
+    ).join('');
+  }
+
+  // Marcar el icono actual como seleccionado
+  document.querySelectorAll('.modal-emoji-btn').forEach(b =>
+    b.classList.toggle('selected', b.dataset.emoji === (b.icon || ''))
+  );
+
+  document.getElementById('modal-icon').style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-icon-input').focus(), 100);
+}
+
+function closeIconModal() {
+  document.getElementById('modal-icon').style.display = 'none';
+}
+
+function saveIconEdit() {
+  const budgetId = document.getElementById('modal-icon-id').value;
+  const icon = document.getElementById('modal-icon-input').value.trim();
+  if (!icon) return toast('⚠️ Selecciona o escribe un emoji');
+  const b = DB.budgets.find(x => String(x.id) === String(budgetId));
+  if (!b) return;
+  b.icon = icon;
+  save(DB);
+  closeIconModal();
+  renderAdmin();
+  toast(`✅ Icono actualizado a ${icon}`);
+}
+
+// ── Modal editar presupuesto ─────────────────────────────────────
+function openBudgetModal(budgetId) {
+  const b = DB.budgets.find(x => String(x.id) === String(budgetId));
+  if (!b) return;
+  const now = new Date();
+  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('modal-budget-id').value     = budgetId;
+  document.getElementById('modal-budget-title').textContent = `✏️ ${b.icon||'📌'} ${b.name}`;
+  document.getElementById('modal-budget-amount').value = getBudgetAmount(budgetId, ym);
+  document.getElementById('modal-budget-month').value  = ym;
+  document.querySelector('input[name="modal-scope"][value="month"]').checked = true;
+  document.getElementById('modal-budget').style.display = 'flex';
+}
+
+function closeBudgetModal() {
+  document.getElementById('modal-budget').style.display = 'none';
+}
+
+function saveBudgetEdit() {
+  const budgetId = document.getElementById('modal-budget-id').value;
+  const amount   = parseFloat(document.getElementById('modal-budget-amount').value);
+  const scope    = document.querySelector('input[name="modal-scope"]:checked').value;
+  const month    = document.getElementById('modal-budget-month').value;
+
+  if (isNaN(amount) || amount < 0) return toast('⚠️ Introduce un importe válido');
+  if (!DB.budgetOverrides) DB.budgetOverrides = [];
+
+  if (scope === 'future') {
+    // Actualiza el importe por defecto de la categoría
+    const b = DB.budgets.find(x => String(x.id) === String(budgetId));
+    if (b) b.amount = amount;
+    // Elimina overrides futuros que ya no tienen sentido
+    const now = new Date();
+    const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    DB.budgetOverrides = DB.budgetOverrides.filter(
+      o => !(String(o.budgetId) === String(budgetId) && o.month >= ym)
+    );
+    toast('✅ Importe por defecto actualizado');
+  } else {
+    // Solo para el mes seleccionado
+    if (!month) return toast('⚠️ Selecciona un mes');
+    DB.budgetOverrides = DB.budgetOverrides.filter(
+      o => !(String(o.budgetId) === String(budgetId) && o.month === month)
+    );
+    DB.budgetOverrides.push({ budgetId: String(budgetId), month, amount });
+    toast(`✅ Importe actualizado para ${month}`);
+  }
+
+  save(DB);
+  closeBudgetModal();
+  renderAdmin();
+}
+
+function loadDefaultCategories() {
+  const existing = DB.budgets.map(b => b.name.toLowerCase());
+  let added = 0;
+  DEFAULT_CATEGORIES.forEach((c, i) => {
+    if (!existing.includes(c.name.toLowerCase())) {
+      DB.budgets.push({ id: Date.now() + i, name: c.name, icon: c.icon, amount: 0 });
+      added++;
+    }
+  });
+  save(DB);
+  renderAdmin();
+  toast(added > 0 ? `✅ ${added} categoría${added!==1?'s':''} añadida${added!==1?'s':''}` : 'ℹ️ Todas las categorías ya existen');
+}
+
+function selectEmoji(e) {
+  document.getElementById('bud-icon').value = e;
+  document.getElementById('bud-icon-preview').textContent = e;
+  document.querySelectorAll('.emoji-btn').forEach(b =>
+    b.classList.toggle('selected', b.dataset.emoji === e));
+}
+
+function deleteBudget(id) {
+  if (!confirm('¿Eliminar este concepto?')) return;
+  DB.budgets = DB.budgets.filter(b => String(b.id) !== String(id));
+  save(DB);
+  renderAdmin();
+  toast('🗑️ Concepto eliminado');
+}
+
+// ═══════════════════════════════════════════
+//  INCOME CATEGORIES
+// ═══════════════════════════════════════════
+function addIncomeCategory() {
+  const name   = document.getElementById('inc-name').value.trim();
+  const amount = parseFloat(document.getElementById('inc-amount').value);
+  const icon   = document.getElementById('inc-icon').value.trim() || '💰';
+  if (!name) return toast('⚠️ Introduce el nombre del ingreso');
+  if (isNaN(amount) || amount < 0) return toast('⚠️ Introduce el importe');
+  if (!DB.incomeCategories) DB.incomeCategories = [];
+  DB.incomeCategories.push({ id: Date.now(), name, icon, amount });
+  save(DB);
+  document.getElementById('inc-name').value    = '';
+  document.getElementById('inc-amount').value  = '';
+  document.getElementById('inc-icon').value    = '';
+  document.getElementById('inc-icon-preview').textContent = '❓';
+  renderIncomeAdmin();
+  toast('✅ Ingreso añadido');
+}
+
+function deleteIncomeCategory(id) {
+  if (!confirm('¿Eliminar esta categoría de ingreso?')) return;
+  DB.incomeCategories = DB.incomeCategories.filter(c => c.id !== id);
+  if (DB.incomeOverrides) DB.incomeOverrides = DB.incomeOverrides.filter(o => String(o.incomeCatId) !== String(id));
+  save(DB);
+  renderIncomeAdmin();
+  toast('🗑️ Ingreso eliminado');
+}
+
+function openIncomeModal(incomeCatId) {
+  if (!DB.incomeCategories) DB.incomeCategories = [];
+  const c = DB.incomeCategories.find(x => String(x.id) === String(incomeCatId));
+  if (!c) return;
+  const now = new Date();
+  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('modal-income-id').value     = incomeCatId;
+  document.getElementById('modal-income-title').textContent = `✏️ ${c.icon||'💰'} ${c.name}`;
+  document.getElementById('modal-income-amount').value = getIncomeAmount(incomeCatId, ym);
+  document.getElementById('modal-income-month').value  = ym;
+  document.querySelector('input[name="modal-income-scope"][value="month"]').checked = true;
+  document.getElementById('modal-income').style.display = 'flex';
+}
+
+function closeIncomeModal() {
+  document.getElementById('modal-income').style.display = 'none';
+}
+
+function saveIncomeEdit() {
+  const incomeCatId = document.getElementById('modal-income-id').value;
+  const amount      = parseFloat(document.getElementById('modal-income-amount').value);
+  const scope       = document.querySelector('input[name="modal-income-scope"]:checked').value;
+  const month       = document.getElementById('modal-income-month').value;
+
+  if (isNaN(amount) || amount < 0) return toast('⚠️ Introduce un importe válido');
+  if (!DB.incomeOverrides) DB.incomeOverrides = [];
+
+  if (scope === 'future') {
+    const c = DB.incomeCategories.find(x => String(x.id) === String(incomeCatId));
+    if (c) c.amount = amount;
+    const now = new Date();
+    const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    DB.incomeOverrides = DB.incomeOverrides.filter(
+      o => !(String(o.incomeCatId) === String(incomeCatId) && o.month >= ym)
+    );
+    toast('✅ Importe por defecto actualizado');
+  } else {
+    if (!month) return toast('⚠️ Selecciona un mes');
+    DB.incomeOverrides = DB.incomeOverrides.filter(
+      o => !(String(o.incomeCatId) === String(incomeCatId) && o.month === month)
+    );
+    DB.incomeOverrides.push({ incomeCatId: String(incomeCatId), month, amount });
+    toast(`✅ Importe actualizado para ${month}`);
+  }
+
+  save(DB);
+  closeIncomeModal();
+  renderIncomeAdmin();
+}
+
+function renderIncomeAdmin() {
+  const el = document.getElementById('income-cat-table');
+  if (!el) return;
+  if (!DB.incomeCategories) DB.incomeCategories = [];
+  if (DB.incomeCategories.length === 0) {
+    el.innerHTML = '<div class="empty">No hay categorías de ingresos. Añade la primera.</div>';
+    return;
+  }
+  const now = new Date();
+  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  el.innerHTML = `<table>
+    <thead>
+      <tr>
+        <th>Símbolo</th>
+        <th>Ingreso</th>
+        <th>Importe por defecto</th>
+        <th>Este mes (${ym})</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      ${DB.incomeCategories.map(c => {
+        const monthAmt = getIncomeAmount(c.id, ym);
+        const hasOverride = DB.incomeOverrides && DB.incomeOverrides.some(
+          o => String(o.incomeCatId)===String(c.id) && o.month===ym
+        );
+        return `
+        <tr>
+          <td style="font-size:1.4rem;text-align:center">${c.icon || '💰'}</td>
+          <td><strong>${c.name}</strong></td>
+          <td>${fmt(c.amount)}</td>
+          <td>
+            ${hasOverride
+              ? `<span style="color:#059669;font-weight:700">${fmt(monthAmt)}</span>
+                 <span style="font-size:.7rem;color:#9ca3af;margin-left:4px">(personalizado)</span>`
+              : fmt(monthAmt)}
+          </td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-primary btn-sm" onclick="openIncomeModal(${c.id})">✏️ Importe</button>
+            <button class="btn-icon" onclick="deleteIncomeCategory(${c.id})">🗑️</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+    <tfoot>
+      <tr style="background:#f0fdf4">
+        <td colspan="3" style="font-weight:800;padding:10px 12px">TOTAL estimado este mes</td>
+        <td style="font-weight:900;color:#059669;padding:10px 12px">
+          ${fmt(DB.incomeCategories.reduce((s,c) => s + getIncomeAmount(c.id, ym), 0))}
+        </td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>`;
+}
+
+// ═══════════════════════════════════════════
+//  EXPENSES
+// ═══════════════════════════════════════════
+function updateDescField() {
+  const conceptId = parseInt(document.getElementById('exp-concept').value);
+  const concept = DB.budgets.find(b => b.id === conceptId);
+  const required = concept && REQUIRES_DESC.includes(concept.name);
+  document.getElementById('exp-desc-req').style.display  = required ? 'inline' : 'none';
+  document.getElementById('exp-desc-opt').style.display  = required ? 'none'   : 'inline';
+  document.getElementById('exp-desc-hint').style.display = required ? 'block'  : 'none';
+  document.getElementById('exp-desc').style.borderColor  = required ? '#f59e0b': '';
+}
+
+function addExpense() {
+  const date = document.getElementById('exp-date').value;
+  const conceptId = parseInt(document.getElementById('exp-concept').value);
+  const accountId = parseInt(document.getElementById('exp-account').value);
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const desc = document.getElementById('exp-desc').value.trim();
+
+  if (!date) return toast('⚠️ Selecciona la fecha');
+  if (!conceptId) return toast('⚠️ Selecciona el concepto');
+  if (!accountId) return toast('⚠️ Selecciona la cuenta');
+  if (isNaN(amount) || amount <= 0) return toast('⚠️ Introduce el importe');
+
+  const concept = DB.budgets.find(b => String(b.id) === String(conceptId));
+  const account = DB.accounts.find(a => String(a.id) === String(accountId));
+  if (concept && REQUIRES_DESC.includes(concept.name) && !desc) {
+    document.getElementById('exp-desc').focus();
+    return toast('⚠️ Describe el gasto para esta categoría');
+  }
+  if (!concept || !account) return toast('⚠️ Concepto o cuenta no encontrados');
+
+  DB.expenses.push({
+    id: Date.now(),
+    date,
+    conceptId,
+    conceptName: concept.name,
+    accountId,
+    accountName: account.name,
+    amount,
+    desc
+  });
+
+  // Actualizar saldo de la cuenta
+  account.balance -= amount;
+  save(DB);
+
+  // Sincronizar con Google Sheets si está configurado
+  const newExp = DB.expenses[DB.expenses.length - 1];
+  syncExpenseToSheets(newExp, false);
+
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-desc').value = '';
+  renderConceptStatus();
+  renderExpenseTable();
+  toast('✅ Gasto registrado');
+}
+
+function deleteExpense(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  const exp = DB.expenses.find(e => String(e.id) === String(id));
+  if (exp) {
+    const acc = DB.accounts.find(a => String(a.id) === String(exp.accountId));
+    if (acc) acc.balance += exp.amount; // Devolver saldo
+    DB.expenses = DB.expenses.filter(e => e.id !== id);
+    save(DB);
+    syncExpenseToSheets(exp, true);
+    renderExpenseTable();
+    toast('🗑️ Gasto eliminado');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  RENDER ADMIN
+// ═══════════════════════════════════════════
+function renderAdmin() {
+  renderTransferSection();
+  renderIncomeAdmin();
+  // Accounts table
+  const at = document.getElementById('accounts-table');
+  if (at) {
+    if (DB.accounts.length === 0) {
+      at.innerHTML = '<div class="empty">No hay cuentas registradas. Añade tu primera cuenta.</div>';
+    } else {
+      at.innerHTML = `<table>
+        <thead><tr><th>Banco</th><th>Saldo Inicial (€)</th><th>Saldo Actual (€)</th><th></th></tr></thead>
+        <tbody>
+          ${DB.accounts.map(a => `
+            <tr>
+              <td><strong>${a.name}</strong></td>
+              <td>${fmt(a.initialBalance)}</td>
+              <td>
+                <input type="number" value="${a.balance.toFixed(2)}" step="0.01"
+                  style="width:130px;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px"
+                  onchange="updateAccountBalance(${a.id}, this.value); save(DB);" />
+              </td>
+              <td><button class="btn-icon" onclick="deleteAccount(${a.id})">🗑️</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+    }
+  }
+
+  // Budget table
+  const bt = document.getElementById('budget-table');
+  if (bt) {
+    if (DB.budgets.length === 0) {
+      bt.innerHTML = '<div class="empty">No hay conceptos definidos. Añade tu primer concepto de gasto.</div>';
+    } else {
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      bt.innerHTML = `<table>
+        <thead>
+          <tr>
+            <th>Símbolo</th>
+            <th>Concepto</th>
+            <th>Importe por defecto</th>
+            <th>Este mes (${ym})</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DB.budgets.map(b => {
+            const monthAmt = getBudgetAmount(b.id, ym);
+            const hasOverride = DB.budgetOverrides && DB.budgetOverrides.some(
+              o => String(o.budgetId)===String(b.id) && o.month===ym
+            );
+            return `
+            <tr>
+              <td style="font-size:1.4rem;text-align:center">${b.icon || '📌'}</td>
+              <td><strong>${b.name}</strong></td>
+              <td>${fmt(b.amount)}</td>
+              <td>
+                ${hasOverride
+                  ? `<span style="color:#2563eb;font-weight:700">${fmt(monthAmt)}</span>
+                     <span style="font-size:.7rem;color:#9ca3af;margin-left:4px">(personalizado)</span>`
+                  : fmt(monthAmt)}
+              </td>
+              <td style="display:flex;gap:4px">
+                <button class="btn btn-primary btn-sm" onclick="openIconModal(${b.id})">🎨 Icono</button>
+                <button class="btn btn-primary btn-sm" onclick="openBudgetModal(${b.id})">✏️ Importe</button>
+                <button class="btn-icon" onclick="deleteBudget(${b.id})">🗑️</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  RENDER DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthName = now.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+  const monthExp = DB.expenses.filter(e => e.date.startsWith(ym));
+  const totalSpentMonth = monthExp.reduce((s, e) => s + e.amount, 0);
+  const totalBudget = DB.budgets.reduce((s, b) => s + b.amount, 0);
+  const totalBalance = DB.accounts.reduce((s, a) => s + a.balance, 0);
+
+  // ── 4 KPIs globales ──
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="stat-card blue">
+      <div class="stat-label">Saldo Total Cuentas</div>
+      <div class="stat-value" style="color:#2563eb">${fmt(totalBalance)}</div>
+      <div class="stat-sub">${DB.accounts.length} cuenta${DB.accounts.length!==1?'s':''}</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Presupuesto Mensual</div>
+      <div class="stat-value" style="color:#10b981">${fmt(totalBudget)}</div>
+      <div class="stat-sub">${DB.budgets.length} concepto${DB.budgets.length!==1?'s':''}</div>
+    </div>
+    <div class="stat-card ${totalSpentMonth > totalBudget ? 'red' : 'orange'}">
+      <div class="stat-label">Gastado Este Mes</div>
+      <div class="stat-value" style="color:${totalSpentMonth > totalBudget ? '#ef4444' : '#f59e0b'}">${fmt(totalSpentMonth)}</div>
+      <div class="stat-sub">${monthExp.length} transaccion${monthExp.length!==1?'es':''}</div>
+    </div>
+    <div class="stat-card ${totalBudget - totalSpentMonth >= 0 ? 'green' : 'red'}">
+      <div class="stat-label">Saldo Disponible</div>
+      <div class="stat-value" style="color:${totalBudget - totalSpentMonth >= 0 ? '#10b981' : '#ef4444'}">${fmt(totalBudget - totalSpentMonth)}</div>
+      <div class="stat-sub">de ${fmt(totalBudget)} presupuestado</div>
+    </div>
+  `;
+
+  // ── Etiqueta del mes ──
+  const ml = document.getElementById('dash-month-label');
+  if (ml) ml.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+  // ── Tabla de conceptos ──
+  const ct = document.getElementById('concepts-table');
+  if (DB.budgets.length === 0) {
+    ct.innerHTML = '<div class="empty">Ve a Administración → Presupuesto Mensual para definir tus conceptos de gasto.</div>';
+  } else {
+    const rows = DB.budgets.map(b => {
+      const budget = getBudgetAmount(b.id, ym);
+      const spent  = monthExp.filter(e => String(e.conceptId) === String(b.id)).reduce((s,e) => s+e.amount, 0);
+      const saldo  = budget - spent;
+      const hasBudget = budget > 0;
+      const pct    = hasBudget ? Math.min(100, (spent / budget) * 100) : (spent > 0 ? 100 : 0);
+      const barClass = !hasBudget && spent === 0 ? 'bar-gray'
+                     : !hasBudget && spent  >  0 ? 'bar-spent'
+                     : pct < 70 ? 'bar-green' : pct < 90 ? 'bar-yellow' : 'bar-red';
+      const pctLabel = !hasBudget ? (spent > 0 ? '⚠️ sin prev.' : '—') : pct.toFixed(0) + '%';
+      const saldoColor = saldo >= 0 ? '#059669' : '#dc2626';
+      return { b, budget, spent, saldo, pct, barClass, pctLabel, saldoColor };
+    });
+
+    const totalBudgetMonth = rows.reduce((s,r) => s + r.budget, 0);
+    const totalSaldo = totalBudgetMonth - totalSpentMonth;
+
+    ct.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th style="width:22%">Concepto</th>
+            <th style="text-align:right;width:16%">Presupuesto</th>
+            <th style="text-align:right;width:16%">Gastado</th>
+            <th style="text-align:right;width:16%">Saldo Actual</th>
+            <th style="width:22%">Progreso</th>
+            <th style="text-align:right;width:8%">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(({b, budget, spent, saldo, pct, barClass, pctLabel, saldoColor}) => `
+            <tr>
+              <td><span style="font-size:1.2rem;margin-right:6px">${b.icon||'📌'}</span><strong>${b.name}</strong></td>
+              <td style="text-align:right">${budget > 0 ? fmt(budget) : '<span style="color:#9ca3af;font-size:.8rem">sin prev.</span>'}</td>
+              <td style="text-align:right;color:#d97706;font-weight:600">${fmt(spent)}</td>
+              <td style="text-align:right;font-weight:700;color:${saldoColor}">${budget > 0 ? fmt(saldo) : '—'}</td>
+              <td>
+                <div class="progress-wrap" style="height:9px">
+                  <div class="progress-bar ${barClass}" style="width:${pct}%"></div>
+                </div>
+              </td>
+              <td style="text-align:right;font-size:.78rem;color:#6b7280">${pctLabel}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="background:#f8fafc">
+            <td style="font-weight:800;padding:10px 12px">TOTAL</td>
+            <td style="text-align:right;font-weight:800;padding:10px 12px">${fmt(totalBudgetMonth)}</td>
+            <td style="text-align:right;font-weight:800;color:#d97706;padding:10px 12px">${fmt(totalSpentMonth)}</td>
+            <td style="text-align:right;font-weight:800;color:${totalSaldo>=0?'#059669':'#dc2626'};padding:10px 12px">${fmt(totalSaldo)}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>`;
+  }
+
+  // ── Saldo de cuentas ──
+  const ao = document.getElementById('accounts-overview');
+  if (DB.accounts.length === 0) {
+    ao.innerHTML = '<div class="empty">Ve a Administración → Cuentas para añadir tus cuentas bancarias.</div>';
+  } else {
+    ao.innerHTML = DB.accounts.map(a => `
+      <div class="account-chip" style="margin-bottom:10px">
+        <div>
+          <div class="name">🏦 ${a.name}</div>
+          <div style="font-size:.75rem;color:#9ca3af">Inicial: ${fmt(a.initialBalance)}</div>
+        </div>
+        <div class="amount ${a.balance >= 0 ? 'positive' : 'negative'}">${fmt(a.balance)}</div>
+      </div>`).join('');
+  }
+
+  // ── Últimos gastos ──
+  const recent = [...DB.expenses].sort((a,b) => b.date.localeCompare(a.date)).slice(0,6);
+  const re = document.getElementById('recent-expenses');
+  if (recent.length === 0) {
+    re.innerHTML = '<div class="empty">No hay gastos registrados todavía.</div>';
+  } else {
+    re.innerHTML = `<table>
+      <thead><tr><th>Fecha</th><th>Concepto</th><th>Descripción</th><th style="text-align:right">Importe</th></tr></thead>
+      <tbody>
+        ${recent.map(e => `
+          <tr>
+            <td style="font-size:.82rem">${fmtDate(e.date)}</td>
+            <td><span class="badge badge-blue">${e.conceptName}</span></td>
+            <td style="color:#6b7280;font-size:.82rem">${e.desc || e.accountName}</td>
+            <td style="text-align:right;font-weight:700;color:#ef4444">-${fmt(e.amount)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  RENDER EXPENSES PAGE
+// ═══════════════════════════════════════════
+function initExpensePage() {
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-date').value = today;
+
+  // Populate selects
+  const conceptSel = document.getElementById('exp-concept');
+  const accountSel = document.getElementById('exp-account');
+  conceptSel.innerHTML = '<option value="">-- Selecciona concepto --</option>' +
+    DB.budgets.map(b => `<option value="${b.id}">${b.icon||'📌'} ${b.name}</option>`).join('');
+  accountSel.innerHTML = '<option value="">-- Selecciona cuenta --</option>' +
+    DB.accounts.map(a => `<option value="${a.id}">${a.name} (${fmt(a.balance)})</option>`).join('');
+
+  conceptSel.onchange = () => { renderConceptStatus(); updateDescField(); };
+
+  // Populate filters
+  document.getElementById('filter-concept').innerHTML = '<option value="">Todos los conceptos</option>' +
+    DB.budgets.map(b => `<option value="${b.id}">${b.icon||'📌'} ${b.name}</option>`).join('');
+  document.getElementById('filter-account').innerHTML = '<option value="">Todas las cuentas</option>' +
+    DB.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+  const now = new Date();
+  document.getElementById('filter-month').value =
+    `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  renderConceptStatus();
+  renderExpenseTable();
+}
+
+function renderConceptStatus() {
+  const conceptId = parseInt(document.getElementById('exp-concept').value);
+  const el = document.getElementById('concept-status');
+  if (!conceptId) {
+    el.innerHTML = '<div class="empty">Selecciona un concepto para ver su estado.</div>';
+    return;
+  }
+  const concept = DB.budgets.find(b => b.id === conceptId);
+  if (!concept) return;
+
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const budget = getBudgetAmount(concept.id, ym);
+  const spent = DB.expenses
+    .filter(e => e.conceptId === conceptId && e.date.startsWith(ym))
+    .reduce((s,e) => s+e.amount, 0);
+  const remaining = budget - spent;
+  const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+  const barClass = pct < 70 ? 'bar-green' : pct < 90 ? 'bar-yellow' : 'bar-red';
+
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2.5rem;line-height:1">${concept.icon||'📌'}</div>
+      <div style="font-size:1.4rem;font-weight:900;color:#1e293b;margin-top:4px">${concept.name}</div>
+      <div style="font-size:.8rem;color:#9ca3af">Mes actual</div>
+    </div>
+    <div class="grid-3" style="margin-bottom:16px">
+      <div style="text-align:center;padding:12px;background:#eff6ff;border-radius:10px">
+        <div style="font-size:.7rem;font-weight:700;color:#3b82f6;text-transform:uppercase">Previsión</div>
+        <div style="font-size:1.3rem;font-weight:900;color:#2563eb">${fmt(budget)}</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:#fff7ed;border-radius:10px">
+        <div style="font-size:.7rem;font-weight:700;color:#f59e0b;text-transform:uppercase">Gastado</div>
+        <div style="font-size:1.3rem;font-weight:900;color:#d97706">${fmt(spent)}</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:${remaining>=0?'#f0fdf4':'#fef2f2'};border-radius:10px">
+        <div style="font-size:.7rem;font-weight:700;color:${remaining>=0?'#10b981':'#ef4444'};text-transform:uppercase">Saldo</div>
+        <div style="font-size:1.3rem;font-weight:900;color:${remaining>=0?'#059669':'#dc2626'}">${fmt(remaining)}</div>
+      </div>
+    </div>
+    <div class="progress-wrap" style="height:12px">
+      <div class="progress-bar ${barClass}" style="width:${pct}%"></div>
+    </div>
+    <div style="text-align:right;font-size:.75rem;color:#6b7280;margin-top:4px">${budget > 0 ? pct.toFixed(1) + '% usado' : 'Sin previsión definida'}</div>
+  `;
+}
+
+function renderExpenseTable() {
+  const conceptFilter = document.getElementById('filter-concept').value;
+  const accountFilter = document.getElementById('filter-account').value;
+  const monthFilter = document.getElementById('filter-month').value;
+
+  let exps = [...DB.expenses];
+  if (conceptFilter) exps = exps.filter(e => String(e.conceptId) === String(conceptFilter));
+  if (accountFilter) exps = exps.filter(e => String(e.accountId) === String(accountFilter));
+  if (monthFilter) exps = exps.filter(e => e.date.startsWith(monthFilter));
+  exps.sort((a,b) => b.date.localeCompare(a.date));
+
+  const el = document.getElementById('expense-table');
+  if (exps.length === 0) {
+    el.innerHTML = '<div class="empty">No hay gastos con los filtros seleccionados.</div>';
+    return;
+  }
+
+  const total = exps.reduce((s,e) => s+e.amount, 0);
+  el.innerHTML = `
+    <table>
+      <thead><tr><th>Fecha</th><th>Concepto</th><th>Cuenta</th><th>Descripción</th><th style="text-align:right">Importe</th><th></th></tr></thead>
+      <tbody>
+        ${exps.map(e => `
+          <tr>
+            <td>${fmtDate(e.date)}</td>
+            <td><span class="badge badge-blue">${e.conceptName}</span></td>
+            <td>${e.accountName}</td>
+            <td style="color:#6b7280">${e.desc || '-'}</td>
+            <td style="text-align:right;font-weight:700;color:#ef4444">-${fmt(e.amount)}</td>
+            <td><button class="btn-icon btn-sm" onclick="deleteExpense(${e.id})">🗑️</button></td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f8fafc">
+          <td colspan="4" style="font-weight:700;padding:10px 12px">TOTAL (${exps.length} gastos)</td>
+          <td style="text-align:right;font-weight:900;color:#ef4444;padding:10px 12px">${fmt(total)}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>`;
+}
+
+// ═══════════════════════════════════════════
+//  BUDGET VIEW PAGE
+// ═══════════════════════════════════════════
+function initBudgetView() {
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('bv-month').value = ym;
+  renderBudgetView();
+}
+
+function renderBudgetView() {
+  const ym = document.getElementById('bv-month').value;
+  if (!ym) return;
+
+  const monthExp = DB.expenses.filter(e => e.date.startsWith(ym));
+  const totalBudget = DB.budgets.reduce((s,b) => s + getBudgetAmount(b.id, ym), 0);
+  const totalSpent  = monthExp.reduce((s,e) => s + e.amount, 0);
+  const totalLeft   = totalBudget - totalSpent;
+  const totalIncome = (DB.incomeCategories||[]).reduce((s,c) => s + getIncomeAmount(c.id, ym), 0);
+  const saldoNeto   = totalIncome - totalSpent;
+
+  const prevSaldo = totalIncome - totalBudget;
+
+  // ── Totales en la barra superior ──
+  const kpiStyle = 'text-align:center;padding:10px 14px;border-radius:10px;flex:1 1 140px;min-width:120px';
+  document.getElementById('bv-totals').innerHTML = `
+    <div style="${kpiStyle};background:#d1fae5">
+      <div style="font-size:.68rem;font-weight:700;color:#059669;text-transform:uppercase">💰 Ingresos</div>
+      <div style="font-size:1.15rem;font-weight:900;color:#059669">${fmt(totalIncome)}</div>
+    </div>
+    <div style="${kpiStyle};background:#dbeafe">
+      <div style="font-size:.68rem;font-weight:700;color:#1d4ed8;text-transform:uppercase">📅 Previsión gastos</div>
+      <div style="font-size:1.15rem;font-weight:900;color:#1d4ed8">${fmt(totalBudget)}</div>
+    </div>
+    <div style="${kpiStyle};background:#eff6ff">
+      <div style="font-size:.68rem;font-weight:700;color:#3b82f6;text-transform:uppercase">💸 Total gastado</div>
+      <div style="font-size:1.15rem;font-weight:900;color:#3b82f6">${fmt(totalSpent)}</div>
+    </div>
+    <div style="${kpiStyle};background:#fff7ed">
+      <div style="font-size:.68rem;font-weight:700;color:#d97706;text-transform:uppercase">📊 Previsión saldo</div>
+      <div style="font-size:1.15rem;font-weight:900;color:${prevSaldo>=0?'#d97706':'#dc2626'}">${fmt(prevSaldo)}</div>
+    </div>
+    <div style="${kpiStyle};background:#fef3c7">
+      <div style="font-size:.68rem;font-weight:700;color:#b45309;text-transform:uppercase">💼 Saldo</div>
+      <div style="font-size:1.15rem;font-weight:900;color:${saldoNeto>=0?'#b45309':'#dc2626'}">${fmt(saldoNeto)}</div>
+    </div>
+  `;
+
+  // ── Tabla resumen ──
+  const summaryEl = document.getElementById('bv-summary-table');
+  if (DB.budgets.length === 0) {
+    summaryEl.innerHTML = '<div class="empty">No hay conceptos definidos. Ve a Administración → Presupuesto Mensual.</div>';
+    document.getElementById('bv-concept-cards').innerHTML = '';
+    return;
+  }
+
+  const rows = DB.budgets.map(b => {
+    const budget = getBudgetAmount(b.id, ym);
+    const spent  = monthExp.filter(e => String(e.conceptId) === String(b.id)).reduce((s,e) => s+e.amount, 0);
+    const left   = budget - spent;
+    const hasBudget = budget > 0;
+    const pct    = hasBudget ? Math.min(100, (spent / budget) * 100) : (spent > 0 ? 100 : 0);
+    const barClass = !hasBudget && spent === 0 ? 'bar-gray'
+                   : !hasBudget && spent  >  0 ? 'bar-spent'
+                   : pct < 70 ? 'bar-green' : pct < 90 ? 'bar-yellow' : 'bar-red';
+    const pctLabel = !hasBudget ? (spent > 0 ? '⚠️' : '—') : pct.toFixed(1) + '%';
+    return { b, budget, spent, left, pct, barClass, pctLabel, hasBudget };
+  });
+
+  summaryEl.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th style="text-align:right">Previsión</th>
+          <th style="text-align:right">Gastado</th>
+          <th style="text-align:right">Saldo</th>
+          <th style="min-width:120px">Progreso</th>
+          <th style="text-align:right">%</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(({b, budget, spent, left, pct, barClass, pctLabel, hasBudget}) => `
+          <tr>
+            <td><span style="font-size:1.1rem;margin-right:6px">${b.icon||'📌'}</span><strong>${b.name}</strong></td>
+            <td style="text-align:right">${hasBudget ? fmt(budget) : '<span style="color:#9ca3af;font-size:.8rem">sin prev.</span>'}</td>
+            <td style="text-align:right;color:#d97706;font-weight:700">${fmt(spent)}</td>
+            <td style="text-align:right;font-weight:700;color:${left>=0?'#059669':'#dc2626'}">${hasBudget ? fmt(left) : '—'}</td>
+            <td>
+              <div class="progress-wrap" style="height:10px">
+                <div class="progress-bar ${barClass}" style="width:${pct}%"></div>
+              </div>
+            </td>
+            <td style="text-align:right;font-size:.8rem;color:#6b7280">${pctLabel}</td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f8fafc;font-weight:900">
+          <td>TOTAL</td>
+          <td style="text-align:right">${fmt(rows.reduce((s,r)=>s+r.budget,0))}</td>
+          <td style="text-align:right;color:#d97706">${fmt(totalSpent)}</td>
+          <td style="text-align:right;color:${totalLeft>=0?'#059669':'#dc2626'}">${fmt(totalLeft)}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+
+  // ── Tarjetas detalle por concepto ──
+  const cardsEl = document.getElementById('bv-concept-cards');
+  cardsEl.innerHTML = rows.map(({b, spent, left, pct, barClass}) => {
+    const conceptExps = monthExp
+      .filter(e => String(e.conceptId) === String(b.id))
+      .sort((a,z) => z.date.localeCompare(a.date));
+
+    const expRows = conceptExps.length === 0
+      ? `<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:14px">Sin gastos este mes</td></tr>`
+      : conceptExps.map(e => `
+          <tr>
+            <td>${fmtDate(e.date)}</td>
+            <td style="color:#6b7280">${e.desc || '-'}</td>
+            <td>${e.accountName}</td>
+            <td style="text-align:right;font-weight:700;color:#ef4444">-${fmt(e.amount)}</td>
+          </tr>`).join('');
+
+    return `
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:1.1rem;font-weight:900;color:#1e293b"><span style="font-size:1.3rem;margin-right:6px">${b.icon||'📌'}</span>${b.name}</div>
+            <div style="font-size:.78rem;color:#9ca3af;margin-top:2px">${conceptExps.length} gasto${conceptExps.length!==1?'s':''} registrado${conceptExps.length!==1?'s':''} este mes</div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="text-align:center;padding:8px 14px;background:#eff6ff;border-radius:8px">
+              <div style="font-size:.65rem;font-weight:700;color:#3b82f6;text-transform:uppercase">Previsión</div>
+              <div style="font-size:1.1rem;font-weight:900;color:#2563eb">${fmt(b.amount)}</div>
+            </div>
+            <div style="text-align:center;padding:8px 14px;background:#fff7ed;border-radius:8px">
+              <div style="font-size:.65rem;font-weight:700;color:#f59e0b;text-transform:uppercase">Gastado</div>
+              <div style="font-size:1.1rem;font-weight:900;color:#d97706">${fmt(spent)}</div>
+            </div>
+            <div style="text-align:center;padding:8px 14px;background:${left>=0?'#f0fdf4':'#fef2f2'};border-radius:8px">
+              <div style="font-size:.65rem;font-weight:700;color:${left>=0?'#10b981':'#ef4444'};text-transform:uppercase">Saldo</div>
+              <div style="font-size:1.1rem;font-weight:900;color:${left>=0?'#059669':'#dc2626'}">${fmt(left)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-wrap" style="height:10px;margin-bottom:4px">
+          <div class="progress-bar ${barClass}" style="width:${pct}%"></div>
+        </div>
+        <div style="text-align:right;font-size:.72rem;color:#9ca3af;margin-bottom:14px">${pct.toFixed(1)}% del presupuesto utilizado</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th>Cuenta</th>
+              <th style="text-align:right">Importe</th>
+            </tr>
+          </thead>
+          <tbody>${expRows}</tbody>
+          ${conceptExps.length > 0 ? `
+          <tfoot>
+            <tr style="background:#f8fafc">
+              <td colspan="3" style="font-weight:700;padding:8px 12px">Total gastado</td>
+              <td style="text-align:right;font-weight:900;color:#ef4444;padding:8px 12px">${fmt(spent)}</td>
+            </tr>
+          </tfoot>` : ''}
+        </table>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+//  GOOGLE DRIVE SYNC
+// ═══════════════════════════════════════════
+const DRIVE_KEY = 'gastos_drive_url';
+
+function getDriveUrl() {
+  return localStorage.getItem(DRIVE_KEY) || '';
+}
+
+function saveDriveUrl() {
+  const url = document.getElementById('drive-url').value.trim();
+  if (!url) return toast('⚠️ Introduce la URL del script');
+  if (!url.startsWith('https://script.google.com')) {
+    return toast('⚠️ La URL no parece válida');
+  }
+  localStorage.setItem(DRIVE_KEY, url);
+  toast('✅ URL guardada');
+  renderDriveStatus();
+}
+
+function renderDriveStatus() {
+  const url = getDriveUrl();
+  const el = document.getElementById('drive-status-bar');
+  if (!el) return;
+  if (!url) {
+    el.innerHTML = `<div class="sync-bar" style="background:#fef3c7;border-color:#fcd34d;color:#92400e">
+      ⚠️ No hay URL configurada. Sigue las instrucciones para conectar tu Google Sheet.
+    </div>`;
+  } else {
+    el.innerHTML = `<div class="sync-bar" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46">
+      ✅ Conectado — <span style="font-size:.75rem;word-break:break-all">${url}</span>
+    </div>`;
+    document.getElementById('drive-url').value = url;
+  }
+}
+
+async function driveRequest(payload) {
+  const url = getDriveUrl();
+  if (!url) { toast('⚠️ Configura primero la URL de Google Drive'); return null; }
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain' }  // evita preflight CORS
+    });
+    return await res.json();
+  } catch(e) {
+    toast('❌ Error de conexión: ' + e.message);
+    return null;
+  }
+}
+
+async function testDriveConnection() {
+  toast('🔌 Probando conexión...');
+  const url = getDriveUrl();
+  if (!url) return toast('⚠️ Configura primero la URL');
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.ok) toast('✅ Conexión correcta con Google Sheets');
+    else toast('❌ Error: ' + (json.error || 'Respuesta inesperada'));
+  } catch(e) {
+    toast('❌ No se puede conectar. Comprueba la URL.');
+  }
+}
+
+async function pushToSheets() {
+  toast('⬆️ Enviando datos...');
+  const result = await driveRequest({ action: 'save_all', data: DB });
+  if (result?.ok) {
+    toast('✅ Datos enviados a Google Sheets');
+    setLastSync();
+  }
+}
+
+async function pullFromSheets() {
+  const url = getDriveUrl();
+  if (!url) return toast('⚠️ Configura primero la URL de Google Drive');
+  toast('⬇️ Cargando datos desde Sheets...');
+  try {
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (json.ok && json.data) {
+      DB = normalizeDatesInDB(json.data);
+      save(DB);
+      renderDashboard();
+      toast('✅ Datos cargados desde Google Sheets');
+      setLastSync();
+    } else {
+      toast('❌ Error al cargar: ' + (json.error || 'Respuesta inesperada'));
+    }
+  } catch(e) {
+    toast('❌ Error de conexión: ' + e.message);
+  }
+}
+
+// Sincronización automática tras cada gasto
+async function syncExpenseToSheets(expense, isDelete = false) {
+  if (!getDriveUrl()) return;
+  if (isDelete) {
+    await driveRequest({ action: 'delete_expense', expenseId: expense.id,
+                         amount: expense.amount, accountId: expense.accountId });
+  } else {
+    await driveRequest({ action: 'add_expense', expense });
+  }
+}
+
+function setLastSync() {
+  const now = new Date().toLocaleString('es-ES');
+  localStorage.setItem('gastos_last_sync', now);
+}
+
+// ═══════════════════════════════════════════
+//  DATA IMPORT / EXPORT
+// ═══════════════════════════════════════════
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gastos_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  toast('📤 Datos exportados');
+}
+
+function exportCSV() {
+  const rows = [['Fecha','Concepto','Cuenta','Descripción','Importe (€)']];
+  DB.expenses.forEach(e => rows.push([e.date, e.conceptName, e.accountName, e.desc || '', e.amount.toFixed(2)]));
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gastos_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  toast('📊 CSV exportado');
+}
+
+function importJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.accounts && data.budgets && data.expenses) {
+        DB = data;
+        save(DB);
+        renderAdmin();
+        toast('✅ Datos importados correctamente');
+      } else {
+        toast('❌ Archivo JSON no válido');
+      }
+    } catch {
+      toast('❌ Error al leer el archivo');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('⚠️ ¿Seguro que quieres borrar TODOS los datos? Esta acción no se puede deshacer.')) return;
+  DB = defaultData();
+  save(DB);
+  renderAdmin();
+  renderDashboard();
+  toast('🗑️ Datos borrados');
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function conceptLabel(b) {
+  return `${b.icon || '📌'} ${b.name}`;
+}
+
+function fmt(n) {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+}
+
+// Convierte "YYYY-MM-DD" → "DD/MM/YYYY" para mostrar
+function fmtDate(d) {
+  if (!d || d.length < 10) return d;
+  return d.substring(8,10) + '/' + d.substring(5,7) + '/' + d.substring(0,4);
+}
+
+function toast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Generar grid de emojis rápidos
+  const QUICK_EMOJIS = ['🛒','🍽️','🍴','🍺','🍻','🥂','🏠','💡','⛽','🏥',
+                        '💊','🎓','👗','💄','🐾','🎭','✈️','💪','📱','🔧',
+                        '💰','🎁','👶','🧹','💼','🌿','🍞','🥩','🐟','☕',
+                        '🎯','🛍️','📦','☎️','💧','🌐','⚽','👦','🧒','🗓️',
+                        '👩‍⚕️','🧑‍⚕️'];
+  const grid = document.getElementById('emoji-quick-grid');
+  if (grid) {
+    grid.innerHTML = QUICK_EMOJIS.map(e =>
+      `<button class="emoji-btn" data-emoji="${e}" title="${e}" onclick="selectEmoji('${e}')">${e}</button>`
+    ).join('');
+  }
+  renderDashboard();
+  renderAdmin();
+});
+</script>
+</body>
+</html>
